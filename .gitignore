@@ -1,0 +1,30 @@
+# --- Claude Code project notes (not for submission) ---
+CLAUDE.md
+
+# --- OS / editor junk ---
+.DS_Store
+.vscode/
+*~
+~$*
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+.ipynb_checkpoints/
+.venv/
+venv/
+env/
+
+# --- Large raw + processed data (not for git) ---
+# Regenerate with: python preprocess_hdfs.py --log_file HDFS.log --output_dir preprocessed
+# or download from https://github.com/logpai/loghub
+HDFS.log
+preprocessed/*
+!preprocessed/HDFS.log_templates.csv
+
+# --- Trained model checkpoints (regenerate via the notebook SAVE cell) ---
+models/*
+!models/.gitkeep
+
+# --- Reports, proposal, brief, demo script (kept out of the application repo) ---
+documents/
