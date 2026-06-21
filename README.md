@@ -1,4 +1,4 @@
-# TraceReader — Code
+# TraceReader
 
 HDFS log anomaly detection with NLP. Group 19 · BINUS University · NLP Final Project (COMP6885001) · 2026.
 
