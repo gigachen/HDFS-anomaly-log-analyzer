@@ -1,65 +1,60 @@
-# TraceReader — HDFS Log Analyzer Powered by NLP
+# TraceReader — Code
 
-Anomaly detection on the LogHub **HDFS_v1** benchmark for COMP6885001 (NLP), BINUS University — **Group 19**.
+HDFS log anomaly detection with NLP. Group 19 · BINUS University · NLP Final Project (COMP6885001) · 2026.
 
-Raw Hadoop logs are parsed into 29 event templates (E1–E29), aggregated into per-block traces, and classified as normal or anomalous by four models spanning frequency-based and sequence-based, supervised and unsupervised paradigms.
+This folder has two self-contained parts — the **experiment** (reproduces the paper's results) and the **app** (interactive demo). Each bundles the data/checkpoints it needs, so both run as-is.
 
-## Results (anomaly-class F1)
+```
+code/
+├── experiment/    reproduce the results
+└── app/           interactive Streamlit demo
+```
 
-| Model | Random split | Temporal split |
-|---|---|---|
-| Logistic Regression | 0.981 | 0.998 |
-| Isolation Forest | 0.618 | 0.755 |
-| LSTM | 0.991 | 0.996 |
-| DeepLog (unsupervised) | — | 0.210 |
+## experiment/
 
-Key finding: the sequence models genuinely encode event order (shuffle attack: DeepLog flags 90% of order-corrupted blocks, LSTM 50%, LR 0%), yet HDFS's labeled anomalies are mostly **frequency-based**, so a simple count model matches a deep sequence model.
+Trains and evaluates the four detectors (Logistic Regression, Isolation Forest, LSTM, DeepLog) on HDFS_v1 under random and temporal splits, plus the shuffle experiment.
 
-## Repository layout
+```
+experiment/
+├── TraceReader_experiment.ipynb   main notebook (run top to bottom)
+├── preprocess_hdfs.py             rebuilds preprocessed/ from raw HDFS.log (only if needed)
+├── preprocessed/                  input features the notebook reads (~135 MB)
+└── models/                        saved checkpoints (LOAD cell skips retraining)
+```
 
-| Path | Description |
-|---|---|
-| `TraceReader_HDFS_Anomaly_Detection.ipynb` | All experiments (4 models, 2 splits, analysis) |
-| `app.py` | Streamlit app — raw log text → per-block anomaly predictions |
-| `preprocess_hdfs.py` | Raw `HDFS.log` → the five `preprocessed/` artifacts |
-| `preprocessed/` | Input features (incl. order-aligned `HDFS_aligned.npz`) |
-| `models/` | Saved checkpoints (`.pkl` sklearn, `.pth` PyTorch) |
-| `sample_log.txt` | Demo input: 1 complete normal + 1 complete anomaly block |
-| `REPORT.md` | Written report (academic structure) |
-| `METHODOLOGY.md` | Detailed start-to-finish methodology |
-
-## Quick start
-
+Run:
 ```bash
+cd experiment
+jupyter lab TraceReader_experiment.ipynb
+```
+- `DATA_DIR` is set to the bundled `preprocessed/`; the Colab `drive.mount` cell is guarded, so it runs locally too.
+- Full run trains all models. To skip training, run the setup/data cells (0–13) then the **LOAD** cell to load checkpoints from `models/`.
+- Requires the standard scientific Python stack plus `torch` (uses CUDA if available, else CPU).
+
+## app/
+
+Streamlit app that loads the trained checkpoints and classifies pasted raw HDFS log text with all four models.
+
+```
+app/
+├── app.py
+├── requirements.txt   streamlit, torch, scikit-learn, pandas, numpy
+├── sample_log.txt     for the "Load sample" button
+├── preprocessed/      HDFS.log_templates.csv (parsing)
+└── models/            checkpoints
+```
+
+Run:
+```bash
+cd app
 pip install -r requirements.txt
-
-# 1) Reproduce experiments
-jupyter lab TraceReader_HDFS_Anomaly_Detection.ipynb
-
-# 2) Run the application
 streamlit run app.py
-#    → click "Load sample (complete blocks)" → "Detect anomalies"
 ```
+Paste raw HDFS log lines (or click **Load sample**), then hit **Detect anomalies**.
 
-GPU is used automatically if available (CUDA). On Apple Silicon, MPS can be enabled; CPU works but the LSTM is slow (~20 min vs ~2 min on a T4).
+## Notes
 
-## Regenerating data from raw logs (optional)
-
-```bash
-python preprocess_hdfs.py --log_file HDFS.log --output_dir preprocessed_real
-```
-
-## Dataset & citation
-
-LogHub HDFS_v1: https://github.com/logpai/loghub
-
-- W. Xu et al., "Detecting Large-Scale System Problems by Mining Console Logs," SOSP 2009.
-- J. Zhu et al., "Loghub: A Large Collection of System Log Datasets for AI-driven Log Analytics," ISSRE 2023.
-
-## Team
-
-| Member | NIM |
-|---|---|
-| Dominicius Francis Ang Gunadi | 2802561293 |
-| Evelyn Ang | 2802472060 |
-| Felicia Pardamean | 2802544873 |
+- Dataset: LogHub **HDFS_v1** — 11,175,629 log lines grouped into 575,061 block traces (2.93% anomalous).
+- The two large source files `HDFS.npz` and `Event_traces.csv` are intentionally omitted (not read by the notebook).
+- The bundled `deeplog.pth` is the original checkpoint; the app's DeepLog scoring matches it (self-consistent).
+- If your submission system has a size cap, you may delete `experiment/preprocessed/` and point `DATA_DIR` at the dataset link in the report.
